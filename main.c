@@ -4,81 +4,146 @@
 #include <stdbool.h>
 #include "database.h"
 
-void displayMenu() {
-    printf("\nMenu:\n");
-    printf("1. Add book\n");
-    printf("2. Delete book\n");
-    printf("3. Show all books\n");
-    printf("4. Save to file\n");
-    printf("5. Load from file\n");
+#define DEFAULT_FILENAME "books.txt"
+
+void display_menu() 
+{
+    printf("\n=== Book Database Menu ===\n");
+    printf("1. Add a book\n");
+    printf("2. Remove a book\n");
+    printf("3. Display all books\n");
+    printf("4. Save database to file\n");
+    printf("5. Load database from file\n");
     printf("6. Sort books\n");
     printf("0. Exit\n");
-    printf("Choose an option: ");
+    printf("Enter your choice: ");
 }
 
-int main(int argc, char *argv[]) {
-    Book books[MAX_ITEMS];
+void display_sort_options() 
+{
+    printf("\n=== Sort Options ===\n");
+    printf("1. By title (A-Z)\n");
+    printf("2. By title (Z-A)\n");
+    printf("3. By year (ascending)\n");
+    printf("4. By year (descending)\n");
+    printf("5. By price (low to high)\n");
+    printf("6. By price (high to low)\n");
+    printf("Enter sorting option: ");
+}
+
+void clear_input_buffer() 
+{
+    while (getchar() != '\n');
+}
+
+int main(int argc, char *argv[]) 
+{
+    int capacity = INITIAL_CAPACITY;
     int count = 0;
-    char filename[100] = "books.txt";
+    Book* database = malloc(capacity * sizeof(Book));
+    char filename[MAX_FILENAME_LEN] = DEFAULT_FILENAME;
     
-    if (argc > 1) {
-        strcpy(filename, argv[1]);
-        loadFromFile(books, &count, filename);
+    if (argc > 1) 
+    {
+        strncpy(filename, argv[1], MAX_FILENAME_LEN - 1);
+        load_from_file(&database, &count, &capacity);
     }
 
     int choice;
     do {
-        displayMenu();
-        if (scanf("%d", &choice) != 1) {
-            while (getchar() != '\n');
+        display_menu();
+        if (scanf("%d", &choice) != 1) 
+        {
+            printf("Invalid input! Please enter a number.\n");
+            clear_input_buffer();
             continue;
         }
-        while(getchar() != '\n');
+        clear_input_buffer();
 
-        switch (choice) {
-            case 1: addBook(books, &count); break;
-            case 2: {
-                int index;
-                printf("Enter book number to delete: ");
-                if (scanf("%d", &index) == 1) deleteBook(books, &count, index - 1);
-                while (getchar() != '\n');
+        switch (choice) 
+        {
+            case 1:
+                database = add_book(database, &count, &capacity);
                 break;
-            }
-            case 3: printBooks(books, count); break;
-            case 4: {
-                printf("Enter filename (default %s): ", filename);
-                char newFilename[100];
-                fgets(newFilename, sizeof(newFilename), stdin);
-                newFilename[strcspn(newFilename, "\n")] = '\0';
-                if (strlen(newFilename) > 0) strcpy(filename, newFilename);
-                saveToFile(books, count, filename);
-                break;
-            }
-            case 5: {
-                printf("Enter filename (default %s): ", filename);
-                char newFilename[100];
-                fgets(newFilename, sizeof(newFilename), stdin);
-                newFilename[strcspn(newFilename, "\n")] = '\0';
-                if (strlen(newFilename) > 0) strcpy(filename, newFilename);
-                loadFromFile(books, &count, newFilename);
-                break;
-            }
-            case 6: {
-                int field, order;
-                printf("Sort by:\n1. Title\n2. Year\n3. Price\nChoose field: ");
-                if (scanf("%d", &field) == 1 && field >= 1 && field <= 3) {
-                    printf("Order:\n1. Ascending\n2. Descending\nChoose order: ");
-                    if (scanf("%d", &order) == 1 && (order == 1 || order == 2)) {
-                        sortBooks(books, count, field, order == 1);
-                    }
+                
+            case 2:
+                if (count == 0) 
+                {
+                    printf("Database is empty!\n");
+                    break;
                 }
-                while (getchar() != '\n');
+                printf("Enter book number to remove (1-%d): ", count);
+                int index;
+                if (scanf("%d", &index) == 1 && index >= 1 && index <= count) 
+                {
+                    remove_book(database, &count, index - 1);
+                } 
+                else 
+                {
+                    printf("Invalid book number!\n");
+                }
+                clear_input_buffer();
                 break;
-            }
-            case 0: printf("Exiting...\n"); break;
-            default: printf("Invalid choice!\n");
+                
+            case 3:
+                print_books(database, count);
+                break;
+                
+            case 4:
+                printf("Enter filename (default: %s): ", filename);
+                char new_filename[MAX_FILENAME_LEN];
+                fgets(new_filename, MAX_FILENAME_LEN, stdin);
+                new_filename[strcspn(new_filename, "\n")] = '\0';
+                if (strlen(new_filename) > 0) 
+                {
+                    strncpy(filename, new_filename, MAX_FILENAME_LEN - 1);
+                }
+                save_to_file(database, count);
+                break;
+                
+            case 5:
+                printf("Enter filename (default: %s): ", filename);
+                fgets(new_filename, MAX_FILENAME_LEN, stdin);
+                new_filename[strcspn(new_filename, "\n")] = '\0';
+                if (strlen(new_filename) > 0) 
+                {
+                    strncpy(filename, new_filename, MAX_FILENAME_LEN - 1);
+                }
+                load_from_file(&database, &count, &capacity);
+                break;
+                
+            case 6:
+                if (count == 0) 
+                {
+                    printf("Database is empty!\n");
+                    break;
+                }
+                display_sort_options();
+                int sort_choice;
+                if (scanf("%d", &sort_choice) == 1 && sort_choice >= 1 && sort_choice <= 6) 
+                {
+                    int field = (sort_choice + 1) / 2;
+                    bool ascending = (sort_choice % 2) == 1;
+                    sortBooks(database, count, field, ascending);
+                    printf("Books sorted successfully.\n");
+                } 
+                else 
+                {
+                    printf("Invalid sort option!\n");
+                }
+                clear_input_buffer();
+                break;
+                
+            case 0:
+                printf("Saving to %s and exiting...\n", filename);
+                save_to_file(database, count);
+                break;
+                
+            default:
+                printf("Invalid choice! Please try again.\n");
         }
     } while (choice != 0);
 
+    free(database);
     return 0;
 }

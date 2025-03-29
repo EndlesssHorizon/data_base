@@ -1,38 +1,32 @@
 #pragma once
 
-#define MAX_NAME_LENGTH 50
-#define MAX_ITEMS 100
+#include <stdbool.h>
+
+#define MAX_TITLE_LEN 100
+#define MAX_FILENAME_LEN 50
+#define INITIAL_CAPACITY 5
 
 typedef struct 
 {
-    char title[MAX_NAME_LENGTH];
+    char title[MAX_TITLE_LEN];
     int year;
     float price;
 } Book;
 
-// Добавить книгу
-void addBook(Book *books, int *count);
-// Удалить книгу
-void deleteBook(Book *books, int *count, int index);
-// Вывести список книг
-void printBooks(const Book *books, int count);
-// Сохранить в файл
-void saveToFile(const Book *books, int count, const char *filename);
-// Загрузить из файла
-void loadFromFile(Book *books, int *count, const char *filename);
-// Сортировать книги
+// Основные функции работы с базой данных
+Book* add_book(Book* database, int* count, int* capacity);
+void remove_book(Book* database, int* count, int index);
+void print_books(const Book* database, int count);
+void save_to_file(const Book* database, int count);
+void load_from_file(Book** database, int* count, int* capacity);
+
+// Функции сортировки
 void sortBooks(Book *books, int count, int field, bool ascending);
 
-
-// Сортировка по названию книг в порядке возрастания
+// Вспомогательные функции для сортировки
 int compareTitleAsc(const void *a, const void *b);
-// Сортировка по названию книг в порядке убывания
 int compareTitleDesc(const void *a, const void *b);
-// Сортировка по годам публикации в порядке возрастания
 int compareYearAsc(const void *a, const void *b);
-// Сортировка по годам публикации в порядке убывания
 int compareYearDesc(const void *a, const void *b);
-// Сортировка цены в порядке возрастания
 int comparePriceAsc(const void *a, const void *b);
-// Сортировка цены в порядке убывания
 int comparePriceDesc(const void *a, const void *b);
